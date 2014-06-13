@@ -77,9 +77,10 @@ class PR2GripperTrajActionServer:
     #Send a command to the gripper action 
     def commandGripper(self, position, max_effort, blocking = 0):
         self.grip_goal.command.position = position
+        print "position of the goal: ", position
         self.grip_goal.command.max_effort = max_effort
         self.gripper_client.send_goal(self.grip_goal)
-        
+        print "goal sent. "
         #if blocking, wait for the gripper to finish
         if blocking:
             self.gripper_client.wait_for_result()
@@ -89,10 +90,12 @@ class PR2GripperTrajActionServer:
         gripper_data = goal.gripper_traj
         success = True
         n_pts = len(gripper_data)
+        print "n_pts: ", n_pts
+        
         
         #Try to synchronize gripper with joint trajectory
         i = -1
-        while (i < n_pts and not rospy.is_shutdown()):
+        while (i < n_pts-1 and not rospy.is_shutdown()):
             # check that preempt has not been requested by the client
             if self.server.is_preempt_requested():
                 print "GRIPPER TRAJ ACTION PREEMPTED"
@@ -102,12 +105,12 @@ class PR2GripperTrajActionServer:
             
             last_i = i
             i = self.curr_traj_segment-1
-            
+            #i=i+1
             #If this is a new point from the same traj, then command it
             if i >= n_pts:
                 print "GripperTrajActionServer: Warning -- segment",i,"received, but only",n_pts,"exist"
             elif (i >= 0) and (i > last_i):
-                self.commandGripper(gripper_data[i], -1)
+                self.commandGripper(gripper_data[i], -1, 1)
                 self.feedback.points_complete = i
                 self.server.publish_feedback(self.feedback)
             
